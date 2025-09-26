@@ -2,8 +2,8 @@ const int fsrPin = A0;
 const int leds[4] = {2, 3, 4, 5};
 const int auxLeds[2] = {7, 8};
 
-const int minRaw = 110;
-const int maxRaw = 190;
+const int minRaw = 1000;
+const int maxRaw = 750;
 const unsigned long holdTime = 2000;
 
 bool isPressed = false;         
