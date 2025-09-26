@@ -1,0 +1,78 @@
+const int fsrPin = A0;        
+const int leds[4] = {2, 3, 4, 5};
+const int auxLeds[2] = {7, 8};
+
+const int minRaw = 110;
+const int maxRaw = 190;
+const unsigned long holdTime = 2000;
+
+bool isPressed = false;         
+int savedLevel = 0;             
+unsigned long releaseTime = 0;  
+
+void setup() {
+  Serial.begin(115200);
+  
+  for (int i = 0; i < 4; i++) pinMode(leds[i], OUTPUT);
+  for (int i = 0; i < 2; i++) pinMode(auxLeds[i], OUTPUT);
+}
+
+void loop() {
+  int raw = analogRead(fsrPin);
+  Serial.println(raw);
+
+  // Pressure percentage
+  int percent = map(raw, maxRaw, minRaw, 0, 100);
+  percent = constrain(percent, 0, 100);
+
+  if (percent > 0) {
+    isPressed = true;
+    int maxLevel = 0;
+    
+    if (percent >= 75) maxLevel = 4;
+    else if (percent >= 50) maxLevel = 3;
+    else if (percent >= 25) maxLevel = 2;
+    else maxLevel = 1;
+
+    // Turn on LEDs based on pressure level
+    for (int i = 0; i < 4; i++) {
+      digitalWrite(leds[i], i < maxLevel ? HIGH : LOW);
+    }
+    
+    savedLevel = maxLevel;
+    releaseTime = millis();
+  } 
+  else {
+    if (isPressed) {
+      isPressed = false;
+    }
+
+    // Gradual turn-off effect
+    unsigned long elapsed = millis() - releaseTime;
+    if (elapsed < holdTime && savedLevel > 0) {
+      unsigned long step = holdTime / savedLevel;
+      int lightsOn = savedLevel - (elapsed / step);
+      
+      for (int i = 0; i < 4; i++) {
+        digitalWrite(leds[i], i < lightsOn ? HIGH : LOW);
+      }
+    } else {
+      for (int i = 0; i < 4; i++) digitalWrite(leds[i], LOW);
+    }
+  }
+
+  // Auxiliary LEDs (inverse of main LEDs)
+  bool mainLEDsOn = false;
+  for (int i = 0; i < 4; i++) {
+    if (digitalRead(leds[i]) == HIGH) {
+      mainLEDsOn = true;
+      break;
+    }
+  }
+
+  int auxState = mainLEDsOn ? LOW : HIGH;
+  digitalWrite(auxLeds[0], auxState);
+  digitalWrite(auxLeds[1], auxState);
+
+  delay(20);
+}
